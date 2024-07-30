@@ -73,6 +73,5 @@ Feel free to fork this repository and contribute by submitting a pull request. F
 This project is licensed under the MIT License.
 ```
 
-You can copy and paste this Markdown into your README file. Let me know if you need any more changes or additional sections!
 
 
