@@ -24,6 +24,12 @@ This project is a simple RestAPI with a basic frontend, focusing on the backend 
    ```bash
    go run main.go
    ```
+## Project Structure
+
+- **cmd/**: Main application entry point.
+- **internal/**: Application-specific logic.
+- **pkg/utils/**: Contains reusable utility functions, including database operation functions located in `pkg/utils/db.go`. These functions are generic and can be used across different projects to standardize database interactions.
+- **web/**: Frontend assets.
 
 ## API Endpoints
 - **Get all todos:**
@@ -52,7 +58,7 @@ This project is a simple RestAPI with a basic frontend, focusing on the backend 
   ```
 
 ## Todo List
-- [ ] Set up the project structure
+- [x] Set up the project structure
 - [x] Implement the main.go file
 - [ ] Create the route to get all todos
 - [ ] Create the route to get a single todo
