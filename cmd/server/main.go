@@ -1,21 +1,22 @@
 package main
 
 import (
-        "net/http"
+
         "github.com/gin-gonic/gin"
-        "github.com/JorgeSaicoski/go-todo-list/db"
-        "github.com/JorgeSaicoski/go-todo-list/api"
+        "github.com/JorgeSaicoski/go-todo-list/internal/db"
+        "github.com/JorgeSaicoski/go-todo-list/internal/api"
 )
 
 func main() {
-        database.ConnectDatabase()
+        db.ConnectDatabase()
+        
 
         router := gin.Default()
 
-        router.GET("/tasks", handlers.GetTasks)
-        router.POST("/tasks", handlers.CreateTask)
+        router.GET("/tasks", api.GetTasks)
+        router.POST("/tasks", api.CreateTask)
 		router.GET("/", func(c *gin.Context) {
-			c.File("public/index.html") // Replace "home.html" with your desired file
+			c.File("public/index.html")
 		})
 
 

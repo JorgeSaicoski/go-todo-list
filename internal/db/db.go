@@ -3,9 +3,17 @@ package db
 import (
         "gorm.io/driver/sqlite"
         "gorm.io/gorm"
+		
 )
 
 var DB *gorm.DB
+
+type Task struct {
+	gorm.Model
+	Title   string
+	Content string
+	Complete bool
+}
 
 func ConnectDatabase() {
         var err error
@@ -14,5 +22,7 @@ func ConnectDatabase() {
                 panic("failed to connect database")
         }
 
-        DB.AutoMigrate(&models.Task{})
+        DB.AutoMigrate(&Task{})
 }
+
+
