@@ -16,7 +16,7 @@ func main() {
         router.LoadHTMLGlob("public/*")
 
         router.GET("/tasks", api.GetTasks)
-        router.POST("/tasks", api.CreateTask)
+        router.POST("/task", api.CreateTask)
         router.GET("/", func(c *gin.Context) {
                 c.HTML(http.StatusOK, "index.tmpl", gin.H{
                     "title": "Tasks",

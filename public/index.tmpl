@@ -4,18 +4,54 @@
     <title>Todo List</title>
 </head>
 <body>
-	<h1>
-		{{ .title }}
-	</h1>
-
-    <ul id="task-list">
-        </ul>
+    <h1>Todo List</h1>
+    <ul id="task-list"></ul>
     <form id="task-form">
-        <input type="text" id="task-title" placeholder="Task title">
+        <input type="text" id="title" placeholder="Task title" required>
+        <input type="text" id="content" placeholder="Task content" required>
         <button type="submit">Add Task</button>
     </form>
     <script>
-        
+        const taskList = document.getElementById('task-list');
+        const taskForm = document.getElementById('task-form');  
+
+
+        async function getTasks() {
+            const response = await fetch('/tasks');
+            const tasks = await response.json();
+
+            taskList.innerHTML = '';
+            tasks.forEach(task => {
+                const li = document.createElement('li');
+                li.textContent = `${task.Title}:  
+                ${task.Content}`;
+                taskList.appendChild(li);
+            });
+        }
+
+        async function createTask(event) {
+            event.preventDefault();
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;  
+
+
+            const response = await fetch('/task', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ title, content })
+            });
+
+            if (response.ok) {
+                getTasks(); // Refresh task list after successful creation
+            } else {
+                console.error('Error creating task');
+            }
+        }
+
+        taskForm.addEventListener('submit', createTask);
+        getTasks();
     </script>
 </body>
 </html>
