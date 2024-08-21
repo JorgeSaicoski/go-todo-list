@@ -9,7 +9,6 @@ import (
 
 func GetTasks(c *gin.Context) {
         var tasks []db.Task
-        fmt.Printf("chego")	
         db.DB.Find(&tasks)
         c.JSON(http.StatusOK, tasks)
 }
@@ -21,8 +20,53 @@ func CreateTask(c *gin.Context) {
                 c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return  
         }
-	fmt.Printf("chego")	
 
         db.DB.Create(&task)
         c.JSON(http.StatusOK, task)  
+}
+
+func UpdateTask(c *gin.Context){
+        id := c.Param("id")
+        var task db.Task
+
+        if err := db.DB.First(&task, id).Error; err != nil {
+                c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+                return
+        }
+
+        var updateData := make(map[string]interface{})
+        
+        if updateData."Title" != ""{
+                updateData["Title"] = updateData."Title"
+        }
+        if updateData."Content" != ""{
+                updateData["Content"] = updateData."Content"
+        }
+
+        if len(updateData) > 0 {
+                if err := db.DB.Model(&task).Updates(updateData).Error; err != nil{
+                        c.JSON(http.StatusInternalServerError, gin.H {"error": err.Error()})
+                        return
+                }
+        } else {
+                c.JSON(http.StatusOK, gin.H{"message": "No changes detected"})
+                return
+        }
+        c.JSON(http.StatusOK, task)
+}
+
+func FinishTask(c *gin.Context){
+        id := c.Param("id")
+        var task db.Task
+        if err := db.DB.First(&task, id).Error; err != nil {
+                c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+                return
+        }
+        
+        task.Complete = true
+        if err := db.DB.Save(&task).Error; err != nil {
+                c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+                return
+        }
+        c.JSON(http.StatusOK, task)
 }
