@@ -35,12 +35,21 @@ func UpdateTask(c *gin.Context){
         }
 
         var updateData := make(map[string]interface{})
-        
-        if updateData."Title" != ""{
-                updateData["Title"] = updateData."Title"
+
+        if err := c.BindJSON(&updateData); err != nil {
+                c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                return
         }
-        if updateData."Content" != ""{
-                updateData["Content"] = updateData."Content"
+        
+        if title, ok := updateData["Title"].(string); ok && title != "" {
+                updateData["Title"] = title
+        } else {
+                delete(updateData, "Title")
+        }
+        if content, ok := updateData["Content"].(string); ok && content != "" {
+                updateData["Content"] = content
+        } else {
+                delete(updateData, "Content")
         }
 
         if len(updateData) > 0 {
@@ -70,3 +79,4 @@ func FinishTask(c *gin.Context){
         }
         c.JSON(http.StatusOK, task)
 }
+
