@@ -12,7 +12,7 @@ services:
         POSTGRES_PORT: 5432
         POSTGRES_USER: postgres
         POSTGRES_PASSWORD: yourpassword
-        POSTGRES_DB: taskdb
+        POSTGRES_DB: shared_db
         POSTGRES_SSLMODE: disable
         POSTGRES_TIMEZONE: UTC
     ports:
