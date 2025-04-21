@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: go-app
+    container_name: go-todo-list
     environment:
         POSTGRES_HOST: shared-db
         POSTGRES_PORT: 5432
@@ -16,7 +16,7 @@ services:
         POSTGRES_SSLMODE: disable
         POSTGRES_TIMEZONE: UTC
     ports:
-      - "8080:8080"
+      - "8000:8000"
     restart: unless-stopped
 
 volumes:

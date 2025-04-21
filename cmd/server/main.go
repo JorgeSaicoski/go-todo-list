@@ -11,6 +11,8 @@ import (
 func main() {
 	db.ConnectDatabase()
 
+	api.InitRepository(db.DB)
+
 	router := gin.Default()
 	router.LoadHTMLGlob("public/*")
 
