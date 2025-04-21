@@ -2,6 +2,7 @@ package db
 
 import (
 	"os"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -11,9 +12,10 @@ var DB *gorm.DB
 
 type Task struct {
 	gorm.Model
-	Title    string
-	Content  string
-	Complete bool
+	Title       string     `json:"title"`
+	Description *string    `json:"description,omitempty"`
+	Status      *string    `json:"status,omitempty"` // expecting "pending", "in-progress", or "completed"
+	DueDate     *time.Time `json:"dueDate,omitempty"`
 }
 
 func ConnectDatabase() {
