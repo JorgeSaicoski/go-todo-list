@@ -1,14 +1,15 @@
 package db
 
 import (
+	"fmt"
 	"os"
 	"time"
 
-	"gorm.io/driver/postgres"
+	"github.com/JorgeSaicoski/pgconnect"
 	"gorm.io/gorm"
 )
 
-var DB *gorm.DB
+var DB *pgconnect.DB
 
 type Task struct {
 	gorm.Model
@@ -19,15 +20,50 @@ type Task struct {
 }
 
 func ConnectDatabase() {
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		dsn = "host=localhost user=postgres password=yourpassword dbname=taskdb port=5432 sslmode=disable TimeZone=UTC"
+	// Create config using environment variables
+	config := pgconnect.DefaultConfig()
+
+	// Override with environment variables if they exist
+	config.Host = getEnv("POSTGRES_HOST", config.Host)
+	config.Port = getEnv("POSTGRES_PORT", config.Port)
+	config.User = getEnv("POSTGRES_USER", config.User)
+	config.Password = getEnv("POSTGRES_PASSWORD", config.Password)
+	config.DatabaseName = getEnv("POSTGRES_DB", "taskdb")
+	config.SSLMode = getEnv("POSTGRES_SSLMODE", config.SSLMode)
+	config.TimeZone = getEnv("POSTGRES_TIMEZONE", config.TimeZone)
+
+	// Retry loop for database connection
+	var err error
+	maxRetries := 3
+	retryDelay := 30 * time.Second
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		fmt.Printf("Attempting to connect to database (attempt %d of %d)\n", attempt, maxRetries)
+
+		DB, err = pgconnect.New(config)
+		if err == nil {
+			fmt.Println("Successfully connected to database")
+			break
+		}
+
+		fmt.Printf("Failed to connect to database: %v\n", err)
+
+		if attempt < maxRetries {
+			fmt.Printf("Retrying in %v...\n", retryDelay)
+			time.Sleep(retryDelay)
+		} else {
+			panic("Failed to connect to database after maximum retry attempts")
+		}
 	}
 
-	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
+	// Auto migrate the Task model
 	DB.AutoMigrate(&Task{})
+}
+
+// Helper function to get environment variable with fallback
+func getEnv(key, fallback string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return fallback
 }

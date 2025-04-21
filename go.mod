@@ -1,12 +1,10 @@
 module github.com/JorgeSaicoski/go-todo-list
 
-go 1.23
-
-toolchain go1.23.7
+go 1.23.8
 
 require (
 	github.com/gin-gonic/gin v1.10.0
-	gorm.io/gorm v1.25.11
+	gorm.io/gorm v1.25.12
 )
 
 require (
@@ -20,6 +18,7 @@ require (
 )
 
 require (
+	github.com/JorgeSaicoski/pgconnect v0.0.0-20250421171313-30b601523a14
 	github.com/bytedance/sonic v1.12.0 // indirect
 	github.com/bytedance/sonic/loader v0.2.0 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
