@@ -15,6 +15,7 @@ services:
         POSTGRES_DB: shared_db
         POSTGRES_SSLMODE: disable
         POSTGRES_TIMEZONE: UTC
+        ALLOWED_ORIGINS: http://localhost:3000
     ports:
       - "8000:8000"
     restart: unless-stopped
