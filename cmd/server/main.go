@@ -37,6 +37,7 @@ func main() {
 	router.GET("/tasks", api.GetTasks)
 	router.POST("/task", api.CreateTask)
 	router.PATCH("/task/update/:id", api.UpdateTask)
+	router.POST("/tasks/active", api.GetNonCompletedTasksPaginated)
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.tmpl", gin.H{
 			"title": "Tasks",
