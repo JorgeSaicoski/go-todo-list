@@ -71,6 +71,48 @@ func GetNonCompletedTasksPaginated(c *gin.Context) {
 	})
 }
 
+func GetCompletedTasksPaginated(c *gin.Context) {
+	var tasks []db.Task
+
+	// Set default pagination values
+	page := 1
+	pageSize := 10 // Define the page size
+
+	// Get pagination data from query parameters
+	if pageParam := c.Query("page"); pageParam != "" {
+		if pageVal, err := strconv.Atoi(pageParam); err == nil && pageVal > 0 {
+			page = pageVal
+		}
+	}
+
+	if pageSizeParam := c.Query("pageSize"); pageSizeParam != "" {
+		if pageSizeVal, err := strconv.Atoi(pageSizeParam); err == nil && pageSizeVal > 0 {
+			pageSize = pageSizeVal
+		}
+	}
+
+	// Using direct DB access to combine WHERE clause with pagination
+	if err := TaskRepository.PaginateWhere(&tasks, page, pageSize, "status = ?", "completed"); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var count int64
+	if err := TaskRepository.Count(&count, "status = ?", "completed"); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Return both the tasks and pagination information
+	c.JSON(http.StatusOK, gin.H{
+		"tasks":      tasks,
+		"total":      count,
+		"page":       page,
+		"pageSize":   pageSize,
+		"totalPages": int(math.Ceil(float64(count) / float64(pageSize))),
+	})
+}
+
 func CreateTask(c *gin.Context) {
 	var task db.Task
 
