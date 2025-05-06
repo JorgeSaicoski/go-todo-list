@@ -35,8 +35,8 @@ func main() {
 	router.LoadHTMLGlob("public/*")
 
 	router.GET("/tasks", api.GetTasks)
-	router.POST("/task", api.CreateTask)
-	router.PATCH("/task/update/:id", api.UpdateTask)
+	router.POST("/tasks", api.CreateTask)
+	router.PATCH("/tasks/update/:id", api.UpdateTask)
 	router.GET("/tasks/active", api.GetNonCompletedTasksPaginated)
 	router.GET("/tasks/completed", api.GetCompletedTasksPaginated)
 	router.GET("/", func(c *gin.Context) {
