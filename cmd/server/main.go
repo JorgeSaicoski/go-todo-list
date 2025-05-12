@@ -34,7 +34,7 @@ func main() {
 
 	router.LoadHTMLGlob("public/*")
 
-	router.GET("/tasks", api.GetTasks)
+	router.GET("/tasks", api.GetTasksPaginate)
 	router.POST("/tasks", api.CreateTask)
 	router.PATCH("/tasks/update/:id", api.UpdateTask)
 	router.GET("/tasks/active", api.GetNonCompletedTasksPaginated)

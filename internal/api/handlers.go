@@ -20,9 +20,26 @@ func InitRepository(database *pgconnect.DB) {
 	TaskRepository = pgconnect.NewRepository[db.Task](database)
 }
 
-func GetTasks(c *gin.Context) {
+func GetTasksPaginate(c *gin.Context) {
 	var tasks []db.Task
-	if err := TaskRepository.FindAll(&tasks); err != nil {
+
+	// Set default pagination values
+	page := 1
+	pageSize := 10
+
+	// Get pagination data from query parameters
+	if pageParam := c.Query("page"); pageParam != "" {
+		if pageVal, err := strconv.Atoi(pageParam); err == nil && pageVal > 0 {
+			page = pageVal
+		}
+	}
+
+	if pageSizeParam := c.Query("pageSize"); pageSizeParam != "" {
+		if pageSizeVal, err := strconv.Atoi(pageSizeParam); err == nil && pageSizeVal > 0 {
+			pageSize = pageSizeVal
+		}
+	}
+	if err := TaskRepository.Paginate(&tasks, page, pageSize); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -34,7 +51,7 @@ func GetNonCompletedTasksPaginated(c *gin.Context) {
 
 	// Set default pagination values
 	page := 1
-	pageSize := 10 // Define the page size
+	pageSize := 10
 
 	// Get pagination data from query parameters
 	if pageParam := c.Query("page"); pageParam != "" {
