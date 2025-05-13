@@ -18,7 +18,7 @@ require (
 )
 
 require (
-	github.com/JorgeSaicoski/pgconnect v0.0.0-20250501193327-af9d6fac5873
+	github.com/JorgeSaicoski/pgconnect v0.0.0-20250513192533-9d6a4a231d4d
 	github.com/bytedance/sonic v1.13.2 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect

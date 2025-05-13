@@ -2,6 +2,8 @@ github.com/JorgeSaicoski/pgconnect v0.0.0-20250421172657-3da2cd4bb3a2 h1:fw5b/kS
 github.com/JorgeSaicoski/pgconnect v0.0.0-20250421172657-3da2cd4bb3a2/go.mod h1:VxXzuAyrPpgPrf4SC2jKniB/nnjsBxveRB3XcrOYCtA=
 github.com/JorgeSaicoski/pgconnect v0.0.0-20250501193327-af9d6fac5873 h1:KJX/WxL9oez05P7TluHmVylZllsriDyYPYDr5QLni88=
 github.com/JorgeSaicoski/pgconnect v0.0.0-20250501193327-af9d6fac5873/go.mod h1:VxXzuAyrPpgPrf4SC2jKniB/nnjsBxveRB3XcrOYCtA=
+github.com/JorgeSaicoski/pgconnect v0.0.0-20250513192533-9d6a4a231d4d h1:VdyQJ4VSPmNPtz2tQR5zSbWuBZ+Egjt9VDZOc6fwkNk=
+github.com/JorgeSaicoski/pgconnect v0.0.0-20250513192533-9d6a4a231d4d/go.mod h1:VxXzuAyrPpgPrf4SC2jKniB/nnjsBxveRB3XcrOYCtA=
 github.com/bytedance/sonic v1.13.2 h1:8/H1FempDZqC4VqjptGo14QQlJx8VdZJegxs6wwfqpQ=
 github.com/bytedance/sonic v1.13.2/go.mod h1:o68xyaF9u2gvVBuGHPlUVCy+ZfmNNO5ETf1+KgkJhz4=
 github.com/bytedance/sonic/loader v0.1.1/go.mod h1:ncP89zfokxS5LZrJxl5z0UJcsk4M4yY2JpfqGeCtNLU=

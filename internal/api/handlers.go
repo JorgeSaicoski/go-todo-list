@@ -43,7 +43,21 @@ func GetTasksPaginate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, tasks)
+
+	var count int64
+	if err := TaskRepository.Count(&count, "status != ?", "completed"); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	// Return both the tasks and pagination information
+	c.JSON(http.StatusOK, gin.H{
+		"tasks":      tasks,
+		"total":      count,
+		"page":       page,
+		"pageSize":   pageSize,
+		"totalPages": int(math.Ceil(float64(count) / float64(pageSize))),
+	})
+
 }
 
 func GetNonCompletedTasksPaginated(c *gin.Context) {
@@ -204,4 +218,41 @@ func UpdateTask(c *gin.Context) {
 
 	fmt.Println("UpdateTask: Task successfully updated")
 	c.JSON(http.StatusOK, task)
+}
+
+func DeleteSelectedTasks(c *gin.Context) {
+	var taskIDs []string
+	if err := c.BindJSON(&taskIDs); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	for _, id := range taskIDs {
+		var task db.Task
+		if err := TaskRepository.FindByID(id, &task); err != nil {
+			continue // Skip tasks that don't exist
+		}
+		if err := TaskRepository.Delete(&task); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Tasks deleted successfully"})
+}
+
+func DeleteAllCompletedTasks(c *gin.Context) {
+	if err := TaskRepository.DeleteWhere("status = ?", "completed"); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "All completed tasks deleted successfully"})
+}
+
+func DeleteAllNonCompletedTasks(c *gin.Context) {
+	if err := TaskRepository.DeleteWhere("status != ?", "completed"); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "All non-completed tasks deleted successfully"})
 }
