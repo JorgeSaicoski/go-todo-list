@@ -1,56 +1,36 @@
 package main
 
 import (
-	"net/http"
 	"os"
-	"strings"
 
 	"github.com/JorgeSaicoski/go-todo-list/internal/api"
 	"github.com/JorgeSaicoski/go-todo-list/internal/db"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	// Connect to the database
 	db.ConnectDatabase()
 
-	api.InitRepository(db.DB)
+	// Get router config, possibly from environment variables
+	config := api.DefaultRouterConfig()
 
-	router := gin.Default()
+	// Override with environment variables if needed
+	if origins := getEnv("ALLOWED_ORIGINS", ""); origins != "" {
+		config.AllowedOrigins = origins
+	}
 
-	// Get allowed origins from environment variable
-	allowedOrigins := getEnv("ALLOWED_ORIGINS", "http://localhost:3000")
-	origins := strings.Split(allowedOrigins, ",")
+	// Create router with full configuration
+	taskRouter := api.NewTaskRouter(db.DB, config)
 
-	// Configure CORS middleware
-	router.Use(cors.New(cors.Config{
-		AllowOrigins:     origins,
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * 60 * 60, // 12 hours
-	}))
+	// Register all routes
+	taskRouter.RegisterRoutes()
 
-	router.LoadHTMLGlob("public/*")
-
-	router.GET("/tasks", api.GetTasksPaginate)
-	router.POST("/tasks", api.CreateTask)
-	router.PATCH("/tasks/update/:id", api.UpdateTask)
-	router.GET("/tasks/active", api.GetNonCompletedTasksPaginated)
-	router.GET("/tasks/completed", api.GetCompletedTasksPaginated)
-	router.POST("/tasks/delete-selected", api.DeleteSelectedTasks)
-	router.DELETE("/tasks/delete-completed", api.DeleteAllCompletedTasks)
-	router.DELETE("/tasks/delete-non-completed", api.DeleteAllNonCompletedTasks)
-	router.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.tmpl", gin.H{
-			"title": "Tasks",
-		})
-	})
-
-	router.Run(":8000")
+	// Start the server
+	port := getEnv("PORT", "8000")
+	taskRouter.Run(":" + port)
 }
 
+// Helper function to get environment variables with fallback
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value

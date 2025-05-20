@@ -12,15 +12,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// TaskRepository is a repository for Task models
-var TaskRepository *pgconnect.Repository[db.Task]
-
-// InitRepository initializes the task repository
-func InitRepository(database *pgconnect.DB) {
-	TaskRepository = pgconnect.NewRepository[db.Task](database)
+// Handler encapsulates all the task-related API handlers
+type TaskHandler struct {
+	repo *pgconnect.Repository[db.Task]
 }
 
-func GetTasksPaginate(c *gin.Context) {
+// NewTaskHandler creates and returns a new TaskHandler instance
+func NewTaskHandler(database *pgconnect.DB) *TaskHandler {
+	return &TaskHandler{
+		repo: pgconnect.NewRepository[db.Task](database),
+	}
+}
+
+// GetTasksPaginated handles the request to get a paginated list of tasks
+func (h *TaskHandler) GetTasksPaginated(c *gin.Context) {
 	var tasks []db.Task
 
 	// Set default pagination values
@@ -39,17 +44,21 @@ func GetTasksPaginate(c *gin.Context) {
 			pageSize = pageSizeVal
 		}
 	}
-	if err := TaskRepository.Paginate(&tasks, page, pageSize); err != nil {
+
+	// Use the handler's repository to query the data
+	if err := h.repo.Paginate(&tasks, page, pageSize); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	//Get the total number of Tasks
 	var count int64
-	if err := TaskRepository.Count(&count, "status != ?", "completed"); err != nil {
+	if err := h.repo.Count(&count, "status != ?", "completed"); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	// Return both the tasks and pagination information
+
+	// Return the paginated tasks
 	c.JSON(http.StatusOK, gin.H{
 		"tasks":      tasks,
 		"total":      count,
@@ -60,7 +69,7 @@ func GetTasksPaginate(c *gin.Context) {
 
 }
 
-func GetNonCompletedTasksPaginated(c *gin.Context) {
+func (h *TaskHandler) GetNonCompletedTasksPaginated(c *gin.Context) {
 	var tasks []db.Task
 
 	// Set default pagination values
@@ -81,13 +90,13 @@ func GetNonCompletedTasksPaginated(c *gin.Context) {
 	}
 
 	// Using direct DB access to combine WHERE clause with pagination
-	if err := TaskRepository.PaginateWhere(&tasks, page, pageSize, "status != ?", "completed"); err != nil {
+	if err := h.repo.PaginateWhere(&tasks, page, pageSize, "status != ?", "completed"); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	var count int64
-	if err := TaskRepository.Count(&count, "status != ?", "completed"); err != nil {
+	if err := h.repo.Count(&count, "status != ?", "completed"); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -102,7 +111,7 @@ func GetNonCompletedTasksPaginated(c *gin.Context) {
 	})
 }
 
-func GetCompletedTasksPaginated(c *gin.Context) {
+func (h *TaskHandler) GetCompletedTasksPaginated(c *gin.Context) {
 	var tasks []db.Task
 
 	// Set default pagination values
@@ -123,13 +132,13 @@ func GetCompletedTasksPaginated(c *gin.Context) {
 	}
 
 	// Using direct DB access to combine WHERE clause with pagination
-	if err := TaskRepository.PaginateWhere(&tasks, page, pageSize, "status = ?", "completed"); err != nil {
+	if err := h.repo.PaginateWhere(&tasks, page, pageSize, "status = ?", "completed"); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	var count int64
-	if err := TaskRepository.Count(&count, "status = ?", "completed"); err != nil {
+	if err := h.repo.Count(&count, "status = ?", "completed"); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -144,7 +153,7 @@ func GetCompletedTasksPaginated(c *gin.Context) {
 	})
 }
 
-func CreateTask(c *gin.Context) {
+func (h *TaskHandler) CreateTask(c *gin.Context) {
 	var task db.Task
 
 	if err := c.BindJSON(&task); err != nil {
@@ -152,27 +161,25 @@ func CreateTask(c *gin.Context) {
 		return
 	}
 
-	if err := TaskRepository.Create(&task); err != nil {
+	if err := h.repo.Create(&task); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, task)
 }
 
-func UpdateTask(c *gin.Context) {
+func (h *TaskHandler) UpdateTask(c *gin.Context) {
 	id := c.Param("id")
 	fmt.Printf("UpdateTask: Processing request for task ID: %s\n", id)
 
 	var task db.Task
 
 	// Find by ID using repository
-	if err := TaskRepository.FindByID(id, &task); err != nil {
+	if err := h.repo.FindByID(id, &task); err != nil {
 		fmt.Printf("UpdateTask: Error finding task with ID %s: %v\n", id, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 		return
 	}
-	fmt.Printf("UpdateTask: Found task: %+v\n", task)
-
 	// Get update data from JSON
 	updateData := make(map[string]interface{})
 	if err := c.BindJSON(&updateData); err != nil {
@@ -180,47 +187,34 @@ func UpdateTask(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	fmt.Printf("UpdateTask: Received update data: %+v\n", updateData)
 
 	// Validate fields
-	fmt.Println("UpdateTask: Validating and applying fields...")
 	if title, ok := updateData["title"].(string); ok && title != "" {
 		newTitle := title
-		fmt.Printf("UpdateTask: Updating title from to '%s'\n", title)
 		task.Title = newTitle
 	}
 
 	if description, ok := updateData["description"].(string); ok {
-		newDesc := description
-		fmt.Printf("UpdateTask: Updating description to '%s'\n", newDesc)
 		task.Description = &description
 	}
 
 	if status, ok := updateData["status"].(string); ok {
-		newStatus := status
-		fmt.Printf("UpdateTask: Updating status from '%s'\n", newStatus)
 		task.Status = &status
 	}
 
 	if dueDate, ok := updateData["dueDate"].(*time.Time); ok {
-		newDueDate := dueDate.String()
-		fmt.Printf("UpdateTask: Updating due date from to '%s'\n", newDueDate)
 		task.DueDate = dueDate
 	}
 
 	// Update using repository
-	fmt.Printf("UpdateTask: Saving updated task: %+v\n", task)
-	if err := TaskRepository.Update(&task); err != nil {
-		fmt.Printf("UpdateTask: Error updating task: %v\n", err)
+	if err := h.repo.Update(&task); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	fmt.Println("UpdateTask: Task successfully updated")
 	c.JSON(http.StatusOK, task)
 }
 
-func DeleteSelectedTasks(c *gin.Context) {
+func (h *TaskHandler) DeleteSelectedTasks(c *gin.Context) {
 	var taskIDs []string
 	if err := c.BindJSON(&taskIDs); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -229,10 +223,11 @@ func DeleteSelectedTasks(c *gin.Context) {
 
 	for _, id := range taskIDs {
 		var task db.Task
-		if err := TaskRepository.FindByID(id, &task); err != nil {
+		if err := h.repo.FindByID(id, &task); err != nil {
+			fmt.Println("Skip tasks that don't exist, while deleting")
 			continue // Skip tasks that don't exist
 		}
-		if err := TaskRepository.Delete(&task); err != nil {
+		if err := h.repo.Delete(&task); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -241,16 +236,16 @@ func DeleteSelectedTasks(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Tasks deleted successfully"})
 }
 
-func DeleteAllCompletedTasks(c *gin.Context) {
-	if err := TaskRepository.DeleteWhere("status = ?", "completed"); err != nil {
+func (h *TaskHandler) DeleteAllCompletedTasks(c *gin.Context) {
+	if err := h.repo.DeleteWhere("status = ?", "completed"); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "All completed tasks deleted successfully"})
 }
 
-func DeleteAllNonCompletedTasks(c *gin.Context) {
-	if err := TaskRepository.DeleteWhere("status != ?", "completed"); err != nil {
+func (h *TaskHandler) DeleteAllNonCompletedTasks(c *gin.Context) {
+	if err := h.repo.DeleteWhere("status != ?", "completed"); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
