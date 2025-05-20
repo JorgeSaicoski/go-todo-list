@@ -89,9 +89,9 @@ func (tr *TaskRouter) RegisterRoutes() {
 		tasksGroup.GET("/completed", tr.handler.GetCompletedTasksPaginated)
 
 		// Delete tasks endpoints
-		tasksGroup.POST("/delete", tr.handler.DeleteSelectedTasks)
-		tasksGroup.DELETE("/completed", tr.handler.DeleteAllCompletedTasks)
-		tasksGroup.DELETE("/active", tr.handler.DeleteAllNonCompletedTasks)
+		tasksGroup.POST("/delete-selected", tr.handler.DeleteSelectedTasks)
+		tasksGroup.DELETE("/delete-completed", tr.handler.DeleteAllCompletedTasks)
+		tasksGroup.DELETE("/delete-non-completed", tr.handler.DeleteAllNonCompletedTasks)
 	}
 
 	// Home route
