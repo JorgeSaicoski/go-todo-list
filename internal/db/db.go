@@ -17,6 +17,7 @@ type Task struct {
 	Description *string    `json:"description,omitempty"`
 	Status      *string    `json:"status,omitempty"` // expecting "pending", "in-progress", or "completed"
 	DueDate     *time.Time `json:"dueDate,omitempty"`
+	OwnerID     string     `json:"ownerId,omitempty"`
 }
 
 func ConnectDatabase() {

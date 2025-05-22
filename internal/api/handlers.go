@@ -161,6 +161,16 @@ func (h *TaskHandler) CreateTask(c *gin.Context) {
 		return
 	}
 
+	// Get the user ID from the context (set by AuthMiddleware)
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Set the owner ID
+	task.OwnerID = userID.(string)
+
 	if err := h.repo.Create(&task); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -180,6 +190,19 @@ func (h *TaskHandler) UpdateTask(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 		return
 	}
+
+	// Verify the user is the owner
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	if task.OwnerID != userID.(string) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to update this task"})
+		return
+	}
+
 	// Get update data from JSON
 	updateData := make(map[string]interface{})
 	if err := c.BindJSON(&updateData); err != nil {

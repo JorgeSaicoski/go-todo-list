@@ -72,6 +72,7 @@ func NewTaskRouter(database *pgconnect.DB, config RouterConfig) *TaskRouter {
 func (tr *TaskRouter) RegisterRoutes() {
 	// Tasks endpoints
 	tasksGroup := tr.router.Group("/tasks")
+	tasksGroup.Use(AuthMiddleware())
 	{
 		// Get all tasks with pagination
 		tasksGroup.GET("", tr.handler.GetTasksPaginated)
