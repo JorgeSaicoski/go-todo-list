@@ -24,8 +24,8 @@ func NewTaskHandler(database *pgconnect.DB) *TaskHandler {
 	}
 }
 
-// GetTasksPaginated handles the request to get a paginated list of tasks
-func (h *TaskHandler) GetTasksPaginated(c *gin.Context) {
+// paginateUserTasks handles paginated queries for user-specific tasks with optional conditions
+func (h *TaskHandler) paginateUserTasks(c *gin.Context, additionalCondition string, args ...interface{}) {
 	var tasks []db.Task
 
 	// Set default pagination values
@@ -38,6 +38,7 @@ func (h *TaskHandler) GetTasksPaginated(c *gin.Context) {
 			page = pageVal
 		}
 	}
+	fmt.Println(pageSize)
 
 	if pageSizeParam := c.Query("pageSize"); pageSizeParam != "" {
 		if pageSizeVal, err := strconv.Atoi(pageSizeParam); err == nil && pageSizeVal > 0 {
@@ -45,15 +46,34 @@ func (h *TaskHandler) GetTasksPaginated(c *gin.Context) {
 		}
 	}
 
-	// Use the handler's repository to query the data
-	if err := h.repo.Paginate(&tasks, page, pageSize); err != nil {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+	fmt.Println(userID)
+
+	// Build the where condition
+	whereCondition := "ownerId = ?"
+	whereArgs := []interface{}{userID}
+
+	if additionalCondition != "" {
+		whereCondition += " AND " + additionalCondition
+		whereArgs = append(whereArgs, args...)
+	}
+	fmt.Println("whereArgs")
+	fmt.Println(whereArgs)
+
+	// Get user's tasks with pagination
+	if err := h.repo.PaginateWhere(&tasks, page, pageSize, whereCondition, whereArgs...); err != nil {
+		fmt.Println("error in the paginate where")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	//Get the total number of Tasks
+	// Get the total count
 	var count int64
-	if err := h.repo.Count(&count, "status != ?", "completed"); err != nil {
+	if err := h.repo.Count(&count, whereCondition, whereArgs...); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -66,91 +86,23 @@ func (h *TaskHandler) GetTasksPaginated(c *gin.Context) {
 		"pageSize":   pageSize,
 		"totalPages": int(math.Ceil(float64(count) / float64(pageSize))),
 	})
+}
 
+func (h *TaskHandler) GetTasksPaginated(c *gin.Context) {
+	fmt.Println("paginated tasks______________________________________")
+
+	h.paginateUserTasks(c, "", nil)
 }
 
 func (h *TaskHandler) GetNonCompletedTasksPaginated(c *gin.Context) {
-	var tasks []db.Task
+	fmt.Println("non completed tasks______________________________________")
 
-	// Set default pagination values
-	page := 1
-	pageSize := 10
-
-	// Get pagination data from query parameters
-	if pageParam := c.Query("page"); pageParam != "" {
-		if pageVal, err := strconv.Atoi(pageParam); err == nil && pageVal > 0 {
-			page = pageVal
-		}
-	}
-
-	if pageSizeParam := c.Query("pageSize"); pageSizeParam != "" {
-		if pageSizeVal, err := strconv.Atoi(pageSizeParam); err == nil && pageSizeVal > 0 {
-			pageSize = pageSizeVal
-		}
-	}
-
-	// Using direct DB access to combine WHERE clause with pagination
-	if err := h.repo.PaginateWhere(&tasks, page, pageSize, "status != ?", "completed"); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	var count int64
-	if err := h.repo.Count(&count, "status != ?", "completed"); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Return both the tasks and pagination information
-	c.JSON(http.StatusOK, gin.H{
-		"tasks":      tasks,
-		"total":      count,
-		"page":       page,
-		"pageSize":   pageSize,
-		"totalPages": int(math.Ceil(float64(count) / float64(pageSize))),
-	})
+	h.paginateUserTasks(c, "status != ?", "completed")
 }
 
 func (h *TaskHandler) GetCompletedTasksPaginated(c *gin.Context) {
-	var tasks []db.Task
-
-	// Set default pagination values
-	page := 1
-	pageSize := 10 // Define the page size
-
-	// Get pagination data from query parameters
-	if pageParam := c.Query("page"); pageParam != "" {
-		if pageVal, err := strconv.Atoi(pageParam); err == nil && pageVal > 0 {
-			page = pageVal
-		}
-	}
-
-	if pageSizeParam := c.Query("pageSize"); pageSizeParam != "" {
-		if pageSizeVal, err := strconv.Atoi(pageSizeParam); err == nil && pageSizeVal > 0 {
-			pageSize = pageSizeVal
-		}
-	}
-
-	// Using direct DB access to combine WHERE clause with pagination
-	if err := h.repo.PaginateWhere(&tasks, page, pageSize, "status = ?", "completed"); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	var count int64
-	if err := h.repo.Count(&count, "status = ?", "completed"); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Return both the tasks and pagination information
-	c.JSON(http.StatusOK, gin.H{
-		"tasks":      tasks,
-		"total":      count,
-		"page":       page,
-		"pageSize":   pageSize,
-		"totalPages": int(math.Ceil(float64(count) / float64(pageSize))),
-	})
+	fmt.Println("completed tasks______________________________________")
+	h.paginateUserTasks(c, "status = ?", "completed")
 }
 
 func (h *TaskHandler) CreateTask(c *gin.Context) {
@@ -163,6 +115,8 @@ func (h *TaskHandler) CreateTask(c *gin.Context) {
 
 	// Get the user ID from the context (set by AuthMiddleware)
 	userID, exists := c.Get("userID")
+	fmt.Println("userID")
+	fmt.Println(userID)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
@@ -175,12 +129,12 @@ func (h *TaskHandler) CreateTask(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	fmt.Println(task)
 	c.JSON(http.StatusOK, task)
 }
 
 func (h *TaskHandler) UpdateTask(c *gin.Context) {
 	id := c.Param("id")
-	fmt.Printf("UpdateTask: Processing request for task ID: %s\n", id)
 
 	var task db.Task
 
